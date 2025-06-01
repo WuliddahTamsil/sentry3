@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sentry Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --content-width: 76%;
+      --max-content-width: 1200px;
+      --panel-radius: 20px;
+      --element-radius: 15px;
+      --primary-color: #666;
+      --shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('img/bg.png') no-repeat center center fixed;
+      background-size: cover;
+      color: #333;
+      min-height: 100vh;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+    
+    .navbar {
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      border-radius: var(--panel-radius);
+      margin: 20px auto;
+      box-shadow: var(--shadow);
+      width: var(--content-width);
+    }
+    
+    .navbar h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .logout-btn {
+      background: var(--primary-color);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--element-radius);
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    .panel-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      width: var(--content-width);
+      margin: 0 auto;
+      margin-bottom: 30px;
+    }
+    
+    @media (min-width: 992px) {
+      .panel-wrapper {
+        flex-direction: row;
+      }
+    }
+    
+    .panel {
+      flex: 1;
+      background: white;
+      border-radius: var(--panel-radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+      transition: transform 0.3s ease-in-out;
+      text-align: center;
+    }
+    
+    .panel:hover {
+      transform: translateY(-5px);
+    }
+    
+    .panel h2 {
+      background: var(--primary-color);
+      color: white;
+      border-radius: var(--element-radius);
+      padding: 12px 0;
+      margin: -25px -25px 20px -25px;
+      font-size: 18px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+    
+    th, td {
+      padding: 6px 8px;
+      border: 2px solid #000;
+      text-align: center;
+      word-wrap: break-word;
+    }
+    
+    .scrollable-table {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .scrollable-table::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .scrollable-table::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: var(--element-radius);
+    }
+    
+    .scrollable-table::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: var(--element-radius);
+    }
+    
+    .scrollable-table::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    
+    .panel.access-logs-panel {
+      width: var(--content-width);
+      margin: 0 auto;
+      margin-top: 0;
+    }
+    
+    .user-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      width: 100%;
+      padding: 8px;
+    }
+    
+    .user-controls button {
+      flex: 1 1 120px;
+      padding: 10px 0;
+      border: none;
+      border-radius: var(--element-radius);
+      background: var(--primary-color);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      min-width: 100px;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .user-controls button:hover {
+      background-color: #555;
+    }
+    
+    .door-control {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 8px;
+    }
+    
+    .door-control button {
+      padding: 14px 0;
+      border: none;
+      border-radius: var(--element-radius);
+      background: var(--primary-color);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      width: 100%;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .door-control button:hover {
+      background: #555;
+    }
+    
+    .door-control button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .door-status {
+      text-align: center;
+      padding: 12px;
+      border-radius: var(--element-radius);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    .door-open {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .door-closed {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    .status-message {
+      margin-top: 8px;
+      padding: 10px;
+      border-radius: var(--element-radius);
+      background-color: #ffeb3b;
+      text-align: center;
+      display: none;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 10px 15px;
+      }
+      
+      .navbar h1 {
+        font-size: 18px;
+      }
+      
+      .logout-btn {
+        padding: 8px 15px;
+        font-size: 12px;
+      }
+      
+      .panel-wrapper {
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+      
+      .panel {
+        padding: 15px;
+      }
+      
+      .panel h2 {
+        padding: 10px 0;
+        margin: -15px -15px 15px -15px;
+        font-size: 16px;
+      }
+      
+      .door-control {
+        gap: 10px;
+        padding: 5px;
+      }
+      
+      .door-control button {
+        padding: 12px 0;
+        font-size: 14px;
+      }
+      
+      .user-controls {
+        gap: 8px;
+        margin-bottom: 15px;
+        padding: 5px;
+      }
+      
+      .user-controls button {
+        padding: 10px 0;
+        font-size: 12px;
+      }
+      
+      .panel.access-logs-panel {
+        margin-top: 0;
+      }
+      
+      th, td {
+        padding: 5px 3px;
+        font-size: 11px;
+      }
+      
+      .door-status {
+        padding: 10px;
+        font-size: 12px;
+      }
+      
+      .status-message {
+        padding: 8px;
+        font-size: 10px;
+      }
+    }
+
+    .pagination-btn {
+      background: var(--primary-color);
+      color: white;
+      padding: 8px 15px;
+      border-radius: var(--element-radius);
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .pagination-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #555;
+    }
+
+    @media (max-width: 768px) {
+      .pagination-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+      }
+      .pagination-controls span {
+        font-size: 10px;
+      }
+    }
+
+    /* Styling for Font Awesome icons within user control buttons */
+    .user-controls button i {
+      margin-right: 4px;
+    }
+
+    .filter-controls {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: var(--element-radius);
+      background-color: #f9f9f9;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-width: 120px;
+    }
+
+    .filter-group label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .filter-controls input[type="date"],
+    .filter-controls select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: var(--element-radius);
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filter-controls button {
+      margin-top: auto;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .filter-controls {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .filter-group {
+        min-width: 100%;
+      }
+
+      .filter-controls button {
+        width: 100%;
+        margin-top: 5px;
+      }
+       .filter-group label,
+       .filter-controls input[type="date"],
+       .filter-controls select,
+       .filter-controls button {
+         font-size: 12px;
+         padding: 8px;
+       }
+        .filter-controls button {
+             padding: 8px 15px;
+         }
+    }
+
+    /* Sticky header for Access Logs table */
+    .access-logs-panel table thead {
+      position: sticky; /* Membuat header "menempel" saat digulir */
+      top: 0; /* Menempel di bagian paling atas kontainer scroll */
+      background-color: var(--primary-color); /* Memberi warna latar belakang agar konten di bawahnya tidak terlihat */
+      color: white; /* Memastikan teks header terlihat di atas latar belakang */
+      z-index: 10; /* Memastikan header berada di atas konten tabel saat digulir */
+    }
+
+    /* Menyesuaikan gaya sel header (th) di dalam thead yang sticky */
+    .access-logs-panel table th {
+        border: 2px solid #000; /* Memastikan border tetap terlihat */
+        padding: 8px; /* Mempertahankan padding */
+        text-align: center; /* Memastikan teks rata tengah */
+        word-wrap: break-word;
+    }
+
+    /* Sticky header for Available Users table */
+    .users-panel table thead {
+        position: sticky;
+        top: 0;
+        background-color: var(--primary-color); /* Menggunakan warna yang sama */
+        color: white;
+        z-index: 10;
+    }
+
+    /* Menyesuaikan gaya sel header (th) di dalam thead yang sticky pada tabel users */
+     .users-panel table th {
+        border: 2px solid #000; /* Memastikan border tetap terlihat */
+        padding: 8px; /* Mempertahankan padding */
+        text-align: center; /* Memastikan teks rata tengah */
+        word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="navbar">
+      <h1>SENTRY DASHBOARD</h1>
+      <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+    </div>
+
+    <div class="panel-wrapper">
+      <!-- Door Control Panel -->
+      <div class="panel" style="flex: 0.4;">
+        <h2>Door Control</h2>
+        <div class="door-control">
+          <button id="openDoor">OPEN DOOR</button>
+          <button id="closeDoor">CLOSE DOOR</button>
+          <div id="doorStatus" class="door-status"></div>
+          <div id="statusMessage" class="status-message"></div>
+        </div>
+      </div>
+
+      <!-- Users Panel -->
+      <div class="panel users-panel" style="flex: 0.6;">
+        <h2>Available Users</h2>
+        <div class="user-controls">
+          <button id="createUser"><i class="fas fa-user-plus"></i> CREATE USER</button>
+          <button id="editUser"><i class="fas fa-user-edit"></i> EDIT USER</button>
+          <button id="deleteUser"><i class="fas fa-trash-alt"></i> DELETE USER</button>
+        </div>
+        <div class="scrollable-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40%">UID</th>
+                <th style="width: 60%">NAMA</th>
+              </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Access Logs Panel -->
+    <div class="panel access-logs-panel">
+      <h2>Access Logs (Last 10 Entries Per Page)</h2>
+
+      <!-- Filter Controls -->
+      <div class="filter-controls">
+        <div class="filter-group">
+          <label for="startDate">Start Date:</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="filter-group">
+          <label for="endDate">End Date:</label>
+          <input type="date" id="endDate">
+        </div>
+        <div class="filter-group">
+          <label for="methodFilter">Method:</label>
+          <select id="methodFilter">
+            <option value="all">All Methods</option>
+            <option value="RFID">RFID</option>
+            <option value="Web">Web</option>
+          </select>
+        </div>
+        <button id="applyFilterBtn" class="pagination-btn">Apply Filters</button>
+        <button id="resetFilterBtn" class="pagination-btn">Reset Filters</button>
+      </div>
+
+      <div class="scrollable-table">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30%">TIMESTAMP</th>
+              <th style="width: 20%">UID</th>
+              <th style="width: 20%">STATUS</th>
+              <th style="width: 30%">METHOD</th>
+            </tr>
+          </thead>
+          <tbody id="logTable"></tbody>
+        </table>
+      </div>
+      <div class="pagination-controls" style="margin-top: 20px; text-align: center;">
+        <button id="prevBtn" class="pagination-btn">Previous</button>
+        <span id="pageInfo" style="margin: 0 10px;">Page 1</span>
+        <button id="nextBtn" class="pagination-btn">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getDatabase, ref, onValue, set, remove, update
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { 
+      getAuth, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsKGHP0TR2i6ZlW4HC07_pGaJDgJqpAOY",
+      authDomain: "sentry-3b2.firebaseapp.com",
+      databaseURL: "https://sentry-3b2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "sentry-3b2",
+      storageBucket: "sentry-3b2.firebasestorage.app",
+      messagingSenderId: "615224873469",
+      appId: "1:615224873469:web:09a9726728b77715d0c994",
+      measurementId: "G-MLPT3056QP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth();
+
+    // Check authentication state
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+      }
+    });
+
+    const logTable = document.getElementById('logTable');
+    const userTable = document.getElementById('userTable');
+    const openDoorBtn = document.getElementById('openDoor');
+    const closeDoorBtn = document.getElementById('closeDoor');
+    const doorStatus = document.getElementById('doorStatus');
+    const statusMessage = document.getElementById('statusMessage');
+
+    // Filter elements
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const methodFilterSelect = document.getElementById('methodFilter');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const resetFilterBtn = document.getElementById('resetFilterBtn');
+
+    // Pagination elements (pastikan ini ada dan posisinya di sini)
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageInfoSpan = document.getElementById('pageInfo');
+
+    let allLogs = []; // Array untuk menyimpan semua log yang diambil (data asli)
+    let filteredLogs = []; // Array untuk menyimpan log setelah filter diterapkan
+    let currentPage = 1;
+    const logsPerPage = 10; // Jumlah log per halaman
+
+    // Fetch all AccessLogs and set up initial render
+    const accessLogsRef = ref(db, 'AccessLogs');
+    onValue(accessLogsRef, snapshot => {
+      const data = snapshot.val();
+      allLogs = []; // Hapus data sebelumnya
+
+      // Konversi objek menjadi array dan filter entri yang dimulai dengan 'Log'
+      for (const key in data) {
+        if (key && key.startsWith('Log')) { // Tambahkan cek 'key' tidak null/undefined
+          const log = data[key];
+          if(log) { // Tambahkan cek 'log' tidak null/undefined
+             allLogs.push(log);
+          }
+        }
+      }
+
+      // Urutkan berdasarkan timestamp DESC (untuk tampilan awal dan filtering)
+      allLogs.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+
+      // Awalnya, filteredLogs sama dengan allLogs
+      filteredLogs = [...allLogs];
+
+      // Reset ke halaman pertama dan render log yang difilter (awal: semua log)
+      currentPage = 1;
+      renderLogs(filteredLogs, currentPage);
+    });
+
+    // User Table
+    const usersRef = ref(db, 'uids');
+    onValue(usersRef, snapshot => {
+      userTable.innerHTML = '';
+      snapshot.forEach(child => {
+        userTable.innerHTML += `
+          <tr>
+            <td>${child.key}</td>
+            <td>${child.val()}</td>
+          </tr>`;
+      });
+    });
+
+    // Door Control
+    const doorRef = ref(db, 'webControl/door_state');
+    const lastUpdateRef = ref(db, 'webControl/last_update');
+    
+    onValue(doorRef, (snapshot) => {
+      const currentState = snapshot.val();
+      updateDoorUI(currentState);
+    });
+
+    function updateDoorUI(state) {
+      if (state === 'open') {
+        doorStatus.textContent = 'DOOR IS CURRENTLY OPEN';
+        doorStatus.className = 'door-status door-open';
+        openDoorBtn.disabled = true;
+        closeDoorBtn.disabled = false;
+      } else {
+        doorStatus.textContent = 'DOOR IS CURRENTLY CLOSED';
+        doorStatus.className = 'door-status door-closed';
+        openDoorBtn.disabled = false;
+        closeDoorBtn.disabled = true;
+      }
+    }
+
+    function showStatusMessage(message) {
+      statusMessage.textContent = message;
+      statusMessage.style.display = 'block';
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 3000);
+    }
+
+    openDoorBtn.addEventListener('click', () => {
+      set(doorRef, 'open')
+        .then(() => {
+          const timestamp = Date.now();
+          set(lastUpdateRef, timestamp)
+            .then(() => {
+              showStatusMessage('Door opened successfully!');
+            });
+        })
+        .catch((error) => {
+          showStatusMessage('Error opening door: ' + error.message);
+        });
+    });
+
+    closeDoorBtn.addEventListener('click', () => {
+      set(doorRef, 'closed')
+        .then(() => {
+          const timestamp = Date.now();
+          set(lastUpdateRef, timestamp)
+            .then(() => {
+              showStatusMessage('Door closed successfully!');
+            });
+        })
+        .catch((error) => {
+          showStatusMessage('Error closing door: ' + error.message);
+        });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = () => {
+      signOut(auth).then(() => {
+        window.location.href = 'index.html';
+      });
+    };
+
+    // User CRUD
+    document.getElementById('createUser').onclick = () => {
+      const uid = prompt('Enter UID:');
+      const name = prompt('Enter Name:');
+      if(uid && name) set(ref(db, 'uids/' + uid), name);
+    };
+
+    document.getElementById('editUser').onclick = () => {
+      const uid = prompt('Enter UID to edit:');
+      const name = prompt('Enter new Name:');
+      
+      if (uid && name) {
+        const userRef = ref(db, 'uids/' + uid);
+        
+        onValue(userRef, (snapshot) => {
+          const userData = snapshot.val();
+          if (userData !== null) {
+            set(userRef, name);
+          } else {
+            alert('UID not found!');
+          }
+        }, { onlyOnce: true });
+      }
+    };
+
+    document.getElementById('deleteUser').onclick = () => {
+      const uid = prompt('Enter UID to delete:');
+      if(uid) remove(ref(db, 'uids/' + uid));
+    };
+
+    // Function to render logs for a specific page from a given array
+    function renderLogs(logsArray, pageNumber) { // Menerima array log
+      const startIndex = (pageNumber - 1) * logsPerPage;
+      const endIndex = startIndex + logsPerPage;
+      const logsToDisplay = logsArray.slice(startIndex, endIndex); // Gunakan logsArray
+
+      logTable.innerHTML = ''; // Bersihkan tabel saat ini
+
+      // Tangani kasus di mana tidak ada log untuk ditampilkan pada halaman saat ini atau setelah filter
+      if (logsToDisplay.length === 0) {
+          logTable.innerHTML = '<tr><td colspan="4">No access logs found for the current filter.</td></tr>';
+      }
+
+      logsToDisplay.forEach(log => {
+        // Asumsikan timestamp dalam detik atau bisa dikonversi dari detik
+        const timestampNumber = Number(log.timestamp) || 0;
+        // Konversi timestamp (detik) ke objek Date (dengan mengalikan 1000)
+        const date = timestampNumber ? new Date(timestampNumber * 1000).toLocaleString() : '-';
+
+        logTable.innerHTML += `
+          <tr>
+            <td>${date}</td>
+            <td>${log.uid || '-'}</td>
+            <td>${log.status || '-'}</td>
+            <td>${log.method || '-'}</td>
+          </tr>`;
+      });
+
+      // Perbarui info paginasi dan status tombol berdasarkan array log yang difilter
+      const totalPages = Math.ceil(logsArray.length / logsPerPage) || 1; // Gunakan logsArray.length
+      pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage >= totalPages; // Nonaktifkan next jika di halaman terakhir atau tidak ada log
+    }
+
+    // Pagination button event listeners (updated to use filteredLogs)
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderLogs(filteredLogs, currentPage); // Gunakan filteredLogs
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredLogs.length / logsPerPage) || 1; // Gunakan filteredLogs.length
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderLogs(filteredLogs, currentPage); // Gunakan filteredLogs
+      }
+    });
+
+    // Function to apply filters
+    function applyFilters() {
+      const startDate = startDateInput.value ? new Date(startDateInput.value).getTime() / 1000 : null; // Ambil nilai tanggal mulai, konversi ke detik
+      const endDate = endDateInput.value ? new Date(endDateInput.value).getTime() / 1000 : null; // Ambil nilai tanggal akhir, konversi ke detik
+      const method = methodFilterSelect.value; // Ambil nilai filter metode
+
+      filteredLogs = allLogs.filter(log => {
+        const logTimestamp = Number(log.timestamp) || 0;
+        const logMethod = log.method ? log.method.toLowerCase() : ''; // Ambil metode log, konversi ke huruf kecil
+
+        // Filter tanggal
+        // Tambahkan 86400 (detik dalam sehari) ke tanggal akhir untuk menyertakan seluruh hari terakhir
+        const dateMatch = (!startDate || logTimestamp >= startDate) && (!endDate || logTimestamp <= endDate + 86400);
+
+        // Filter metode (bandingkan dalam huruf kecil)
+        const methodMatch = (method === 'all' || logMethod === method.toLowerCase());
+
+        return dateMatch && methodMatch; // Hanya sertakan log yang cocok dengan kedua filter
+      });
+
+      // Urutkan kembali log yang difilter (penting jika filtering mengubah urutan)
+      filteredLogs.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+
+      // Reset ke halaman pertama dan render log yang difilter
+      currentPage = 1;
+      renderLogs(filteredLogs, currentPage);
+    }
+
+    // Function to reset filters
+    function resetFilters() {
+      startDateInput.value = '';
+      endDateInput.value = '';
+      methodFilterSelect.value = 'all';
+
+      // Reset log yang difilter kembali ke semua log asli
+      filteredLogs = [...allLogs];
+
+      // Reset ke halaman pertama dan render semua log asli
+      currentPage = 1;
+      renderLogs(filteredLogs, currentPage);
+    }
+
+    // Add event listeners to filter buttons
+    applyFilterBtn.addEventListener('click', applyFilters);
+    resetFilterBtn.addEventListener('click', resetFilters);
+  </script>
+</body>
+</html>
